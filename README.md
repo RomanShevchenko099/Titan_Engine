@@ -171,4 +171,4 @@ incredible and great opportunity to create a faceless channel. What was incredib
 ## Status
 
 Personal project built while learning Python independently.
-Not production-ready — built for learning and experimentation.
+Not production-ready — built for learning and experimentation only.
