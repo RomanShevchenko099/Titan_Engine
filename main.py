@@ -1,4 +1,12 @@
-import os, json, re, asyncio, subprocess, torch, edge_tts, random, time
+import os
+import json 
+import re
+import asyncio
+import subprocess
+import torch
+import edge_tts
+import random
+import time
 from openai import OpenAI
 from diffusers import FluxPipeline
 from huggingface_hub import login
@@ -33,14 +41,20 @@ class TitanEngine:
         ))
 
         content = res.choices[0].message.content.strip()
-        # Очистка від можливих ```json ... ```
+        # Cleaning up possible json  
         content = re.sub(r'```json|```', '', content)
         return json.loads(content)
 
     async def render_ffmpeg(self, visual, audio, output, text, is_video):
         w, h = config.VIDEO_CONFIG["width"], config.VIDEO_CONFIG["height"]
-        v_filter = (f"scale=iw*2:-1,zoompan=z='pzoom+0.001':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s={w}x{h}"
-                    if not is_video else f"scale={w}:{h},setsar=1")
+        
+        # check if input is a photo or video to set the right ffmpeg filter.
+        if not is_video:
+            # apply zoompan effect for static images to make them look like video
+            v_filter = f"scale=iw*2:-1,zoompan=z='pzoom+0.001':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=125:s={w}x{h}"
+        else:
+            # just scale to final resolution if it's already a video
+            v_filter = f"scale={w}:{h},setsar=1"
 
         clean_text = text.replace("'", "").replace(":", "")
         drawtext = (f"drawtext=text='{clean_text}':fontfile={config.VIDEO_CONFIG['font_path']}:"
