@@ -1,0 +1,8 @@
+openai
+diffusers
+torch
+edge-tts
+huggingface-hub
+transformers
+accelerate
+pillow
