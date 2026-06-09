@@ -1,11 +1,9 @@
 import os
 import json 
-import re
 import asyncio
 import subprocess
 import torch
 import edge_tts
-import random
 import time
 from openai import OpenAI
 from diffusers import FluxPipeline
@@ -41,9 +39,17 @@ class TitanEngine:
         ))
 
         content = res.choices[0].message.content.strip()
-        # Cleaning up possible json  
-        content = re.sub(r'```json|```', '', content)
-        return json.loads(content)
+
+        # We need remove markdown code blocks from the start and end so parser doesn't fail
+        if content.startswith("```json"):
+            content = content[7:]
+        elif content.startswith("```"):
+            content = content[3:]
+            
+        if content.endswith("```"):
+            content = content[:-3]
+
+        return json.loads(content.strip())
 
     async def render_ffmpeg(self, visual, audio, output, text, is_video):
         w, h = config.VIDEO_CONFIG["width"], config.VIDEO_CONFIG["height"]
@@ -91,7 +97,9 @@ class TitanEngine:
 
         list_txt = os.path.join(config.OUT_DIR, "list.txt")
         with open(list_txt, "w") as f:
-            for s in sorted(scene_files): f.write(f"file '{s}'\n")
+            # sorted is needed to keep the correct scene order for ffmpeg concat
+            for s in sorted(scene_files): 
+                f.write(f"file '{s}'\n")
 
         final_out = os.path.join(config.BASE_PATH, f"result_{int(time.time())}.mp4")
         subprocess.run(f"ffmpeg -y -f concat -safe 0 -i {list_txt} -c copy {final_out}", shell=True)
